@@ -70,7 +70,7 @@ fig = plt.figure(figsize = (6,10), layout = 'constrained')
 gs = fig.add_gridspec(5, 1)
 ax1 = fig.add_subplot(gs[0])
 dendrogram(np.column_stack([samp_cluster.children_, samp_cluster.distances_, list(range(len(samp_cluster.children_)))]),
-           ax = ax1, labels = [f'{cond_map[cols[i][0]]} {cols[i]}' for i in samp_order], leaf_rotation=90, 
+           ax = ax1, labels = [f'{cond_map[cols[i][0]]} {cols[i]}' for i in range(len(samp_order))], leaf_rotation=90, 
            color_threshold=0, link_color_func = lambda k: 'k')
 ax1.set_yticks([])
 ax1.spines['top'].set_visible(False)
@@ -78,7 +78,7 @@ ax1.spines['right'].set_visible(False)
 ax1.spines['bottom'].set_visible(False)
 ax1.spines['left'].set_visible(False)
 
-absmax = np.max(np.abs(zscores.to_numpy()))
+absmax = np.nanmax(np.abs(zscores.to_numpy()))
 norm = Normalize(vmin = -absmax, vmax = absmax)
 
 ax2 = fig.add_subplot(gs[1:])
