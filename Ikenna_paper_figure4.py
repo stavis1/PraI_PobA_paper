@@ -63,13 +63,16 @@ axC = fig.add_subplot(gs[1,:])
 axA.scatter(top50['CJ475'], top50['CJ781'], s = 5, c = 'k', marker = '.', label = 'CJ781')
 axA.scatter(top50['CJ475'], top50['CJ680'], s = 5, c = 'g', marker = '.', label = 'CJ680')
 
-labels = [axA.text(cj475[p], label_pos[p], p, fontsize = 5) for p in annotate]
-adjust_text(labels, ax=axA)
+labels = [axA.text(cj475[p], label_pos[p], p, fontsize = 7) for p in annotate]
+adjust_text(labels, 
+            x = list(top50['CJ475'])*2, 
+            y = list(top50['CJ781']) + list(top50['CJ680']), 
+            ax=axA)
 
 axA.plot([np.min(top50[data_cols]),np.max(top50['CJ475'])],
          [np.min(top50[data_cols]),np.max(top50['CJ475'])],
          '--r', linewidth = 0.5)
-axA.legend(fontsize = 7)
+axA.legend(fontsize = 7, loc = 'upper center')
 axA.set_title('A', loc = 'left')
 
 pad = 3e9
@@ -87,4 +90,5 @@ axC.imshow(panelC)
 no_borders(axC)
 axC.set_title('C', loc = 'left')
 
-
+plt.tight_layout()
+fig.savefig('Figure4.png', dpi = 900, bbox_inches = 'tight')
