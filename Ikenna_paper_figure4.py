@@ -14,6 +14,9 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.gridspec import GridSpec
 from adjustText import adjust_text
+from matplotlib import colormaps as cmaps
+from matplotlib.colors import Normalize
+from matplotlib.cm import ScalarMappable
 
 wd = '/home/4vt/Documents/data/SLT01_PUFs/presentations_and_reports/Ikenna_paper/'
 os.chdir(wd)
@@ -28,11 +31,28 @@ label_pos = {p:np.nansum([i6,i7])/2 for p,i7,i6 in zip(top50['Proteins'], top50[
 cj475 = {p:i if np.isfinite(i) else min(top50['CJ475']) for p,i in zip(top50['Proteins'], top50['CJ475'])}
 
 # panel B data
-with mpl.cbook.get_sample_data(f'{wd}old_files/Figure4B.png') as file:
-    panelB = plt.imread(file, format='png')
+with open('Supp data file_PraI-PobA proteomics paper.xlsx','rb') as xlsx:
+    raw_data = pd.read_excel(xlsx, 'S1', skiprows= 2)
+raw_data.index = raw_data['Name']
+#MISSING: Ech, AroY, EcdBD
+queries = ['fcs', 'vdh', 'pobA', 'PraI', 'vanA', 'vanB', 'catA-I', 'catA-II']
+icols = [f'{l}{n}' for l in 'ABC' for n in range(1,4)]
+panel_B = raw_data.loc[queries, ['Name'] + icols]
+vals = panel_B[icols].to_numpy()
+means = np.nanmean(vals, axis = 1)
+stds = np.nanstd(vals, axis = 1)
+vals = (vals - means[:, np.newaxis])/stds[:, np.newaxis]
+panel_B[icols] = vals
+icols = ['CJ475 1', 'CJ475 2', 'CJ475 3',
+         'CJ680 1', 'CJ680 2', 'CJ680 3',
+         'CJ781 1', 'CJ781 2', 'CJ781 3']
+panel_B.columns = ['Name'] + icols
+
+absmax = np.nanmax(np.abs(panel_B[icols].to_numpy()))
+norm = Normalize(vmin = -absmax, vmax = absmax)
 
 # panel C data
-with mpl.cbook.get_sample_data(f'{wd}old_files/Figure4C.png') as file:
+with mpl.cbook.get_sample_data(f'{wd}Figure3_pathway.png') as file:
     panelC = plt.imread(file, format='png')
 
 ### plot figure
@@ -52,12 +72,13 @@ def no_borders(ax):
                    top=False,
                    labelbottom=False)
 
-fig = plt.figure(layout="constrained", figsize = (6.5, 4))
-gs = GridSpec(2, 2, figure=fig)
+scale = 0.9
+fig = plt.figure(layout="constrained", figsize = (6*scale, 5*scale))
+gs = GridSpec(2, 4, figure=fig)
 
 axA = fig.add_subplot(gs[0,:-1])
-axB = fig.add_subplot(gs[0,-1])
-axC = fig.add_subplot(gs[1,:])
+axB = fig.add_subplot(gs[:,-1])
+axC = fig.add_subplot(gs[1,:-1])
 
 #panel A
 axA.scatter(top50['CJ475'], top50['CJ781'], s = 5, c = 'k', marker = '.', label = 'CJ781')
@@ -80,15 +101,31 @@ axA.set_xlim(min(top50['CJ475']) - pad,max(top50['CJ475']) + pad)
 axA.ticklabel_format(axis = 'both', style = 'sci', useMathText = True)
 axA.tick_params(axis='both', labelsize=7)
 
-#panel B
-axB.imshow(panelB)
-no_borders(axB)
+# #panel B
+axB.imshow(panel_B[icols], 
+           aspect = 'auto', 
+           interpolation = 'nearest', 
+           cmap = cmaps['coolwarm'], 
+           norm = norm)
+axB.set_yticks(range(len(queries)), queries, fontsize = 8)
+axB.set_xticks(range(len(icols)), icols, fontsize = 8, rotation = 90)
+axB.yaxis.tick_right()
+
+sm = ScalarMappable(norm = norm, cmap = cmaps['coolwarm'])
+clb = plt.colorbar(sm, 
+                   ax = axB, 
+                   shrink = .7, 
+                   aspect = 15,
+                   orientation="horizontal",
+                   location = 'top',
+                   pad = -0.08)
+clb.ax.set_title('Z-score', fontsize = 8)
+clb.ax.tick_params(labelsize=8)
 axB.set_title('B', loc = 'left')
 
 #panel C
-axC.imshow(panelC)
+axC.imshow(panelC, aspect = 'equal')
 no_borders(axC)
 axC.set_title('C', loc = 'left')
 
-plt.tight_layout()
-fig.savefig('Figure4.png', dpi = 900, bbox_inches = 'tight')
+fig.savefig('Figure4.svg', dpi = 900, bbox_inches = 'tight')
